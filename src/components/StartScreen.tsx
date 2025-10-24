@@ -15,7 +15,7 @@ const StartScreen = ({ onStart }: StartScreenProps) => {
             Flappy Sura 🪶
           </h1>
           <p className="text-muted-foreground text-lg">
-            Upload your face and voice, then flap away!
+            Navigate through pipes and beat your high score!
           </p>
         </div>
 

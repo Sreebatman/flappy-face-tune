@@ -67,9 +67,9 @@ const GameCanvas = ({ onGameOver }: GameCanvasProps) => {
     const source = audioContextRef.current.createBufferSource();
     source.buffer = audioBufferRef.current;
     
-    // Create light screaming effect with higher pitch and faster playback
-    // Adjust playback rate based on direction for screaming voice effect
-    source.playbackRate.value = isGoingUp ? 1.8 : 1.5;
+    // Create "eehhh" screaming effect with very high pitch
+    // Much higher playback rate for intense screaming sound
+    source.playbackRate.value = isGoingUp ? 2.2 : 1.8;
     
     source.connect(audioContextRef.current.destination);
     source.start(0);
@@ -221,18 +221,24 @@ const GameCanvas = ({ onGameOver }: GameCanvasProps) => {
       const rotation = Math.min(Math.max(gameState.playerVelocity * 0.05, -0.5), 0.5);
       ctx.rotate(rotation);
 
-      // Draw default Sura face
+      // Draw default Sura face - cropped to show only face
       if (faceImg.complete) {
         ctx.beginPath();
         ctx.arc(0, 0, PLAYER_SIZE / 2, 0, Math.PI * 2);
         ctx.closePath();
         ctx.clip();
+        
+        // Crop to face area (center-top portion of image)
+        const imgWidth = faceImg.naturalWidth;
+        const imgHeight = faceImg.naturalHeight;
+        const cropSize = Math.min(imgWidth, imgHeight) * 0.6;
+        const cropX = imgWidth * 0.5 - cropSize / 2;
+        const cropY = imgHeight * 0.25 - cropSize / 2;
+        
         ctx.drawImage(
           faceImg,
-          -PLAYER_SIZE / 2,
-          -PLAYER_SIZE / 2,
-          PLAYER_SIZE,
-          PLAYER_SIZE
+          cropX, cropY, cropSize, cropSize,
+          -PLAYER_SIZE / 2, -PLAYER_SIZE / 2, PLAYER_SIZE, PLAYER_SIZE
         );
       }
 
