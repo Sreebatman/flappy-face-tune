@@ -228,12 +228,12 @@ const GameCanvas = ({ onGameOver }: GameCanvasProps) => {
         ctx.closePath();
         ctx.clip();
         
-        // Crop to face area (center-top portion of image)
+        // Tight crop focusing on face only
         const imgWidth = faceImg.naturalWidth;
         const imgHeight = faceImg.naturalHeight;
-        const cropSize = Math.min(imgWidth, imgHeight) * 0.6;
+        const cropSize = Math.min(imgWidth, imgHeight) * 0.45;
         const cropX = imgWidth * 0.5 - cropSize / 2;
-        const cropY = imgHeight * 0.25 - cropSize / 2;
+        const cropY = imgHeight * 0.35 - cropSize / 2;
         
         ctx.drawImage(
           faceImg,
