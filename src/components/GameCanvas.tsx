@@ -228,12 +228,12 @@ const GameCanvas = ({ onGameOver }: GameCanvasProps) => {
         ctx.closePath();
         ctx.clip();
         
-        // Tight crop focusing on face only
+        // Crop to show full face including chin and forehead
         const imgWidth = faceImg.naturalWidth;
         const imgHeight = faceImg.naturalHeight;
-        const cropSize = Math.min(imgWidth, imgHeight) * 0.45;
+        const cropSize = Math.min(imgWidth, imgHeight) * 0.7;
         const cropX = imgWidth * 0.5 - cropSize / 2;
-        const cropY = imgHeight * 0.35 - cropSize / 2;
+        const cropY = imgHeight * 0.4 - cropSize / 2;
         
         ctx.drawImage(
           faceImg,
