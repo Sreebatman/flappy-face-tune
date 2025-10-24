@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
+import suraFaceDefault from "@/assets/sura-face.jpg";
 
 interface GameCanvasProps {
   faceImage: string | null;
@@ -34,7 +35,6 @@ const GameCanvas = ({ faceImage, voiceSound, onGameOver }: GameCanvasProps) => {
 
   const audioContextRef = useRef<AudioContext | null>(null);
   const audioBufferRef = useRef<AudioBuffer | null>(null);
-  const defaultFaceRef = useRef<string>("😊");
 
   const { toast } = useToast();
 
@@ -124,11 +124,9 @@ const GameCanvas = ({ faceImage, voiceSound, onGameOver }: GameCanvasProps) => {
     const gameState = gameStateRef.current;
     let animationFrameId: number;
 
-    // Load face image
+    // Load face image (use uploaded or default Sura face)
     const faceImg = new Image();
-    if (faceImage) {
-      faceImg.src = faceImage;
-    }
+    faceImg.src = faceImage || suraFaceDefault;
 
     const gameLoop = () => {
       if (gameState.isGameOver) return;
@@ -224,7 +222,8 @@ const GameCanvas = ({ faceImage, voiceSound, onGameOver }: GameCanvasProps) => {
       const rotation = Math.min(Math.max(gameState.playerVelocity * 0.05, -0.5), 0.5);
       ctx.rotate(rotation);
 
-      if (faceImage && faceImg.complete) {
+      // Draw face (uploaded or default Sura face)
+      if (faceImg.complete) {
         ctx.beginPath();
         ctx.arc(0, 0, PLAYER_SIZE / 2, 0, Math.PI * 2);
         ctx.closePath();
@@ -236,12 +235,6 @@ const GameCanvas = ({ faceImage, voiceSound, onGameOver }: GameCanvasProps) => {
           PLAYER_SIZE,
           PLAYER_SIZE
         );
-      } else {
-        // Default emoji face
-        ctx.font = `${PLAYER_SIZE}px Arial`;
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(defaultFaceRef.current, 0, 0);
       }
 
       // Add shadow/glow
