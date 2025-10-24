@@ -13,11 +13,11 @@ interface Pipe {
   scored: boolean;
 }
 
-const GRAVITY = 0.5;
+const GRAVITY = 0.4;
 const FLAP_STRENGTH = -10;
 const PIPE_WIDTH = 80;
-const PIPE_GAP = 200;
-const PIPE_SPEED = 3;
+const PIPE_GAP = 240;
+const PIPE_SPEED = 2.5;
 const PLAYER_SIZE = 60;
 
 const GameCanvas = ({ onGameOver }: GameCanvasProps) => {
@@ -146,7 +146,7 @@ const GameCanvas = ({ onGameOver }: GameCanvasProps) => {
         gameState.playerY += gameState.playerVelocity;
 
         // Generate pipes
-        if (gameState.frameCount % 90 === 0) {
+        if (gameState.frameCount % 100 === 0) {
           const topHeight = Math.random() * (canvas.height - PIPE_GAP - 100) + 50;
           gameState.pipes.push({
             x: canvas.width,
