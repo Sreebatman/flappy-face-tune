@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import suraFaceDefault from "@/assets/sura-face.jpg";
+import suraVoiceDefault from "@/assets/sura-voice.opus";
 
 interface GameCanvasProps {
-  faceImage: string | null;
-  voiceSound: File | null;
   onGameOver: (score: number) => void;
 }
 
@@ -21,7 +20,7 @@ const PIPE_GAP = 200;
 const PIPE_SPEED = 3;
 const PLAYER_SIZE = 60;
 
-const GameCanvas = ({ faceImage, voiceSound, onGameOver }: GameCanvasProps) => {
+const GameCanvas = ({ onGameOver }: GameCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [score, setScore] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -38,30 +37,29 @@ const GameCanvas = ({ faceImage, voiceSound, onGameOver }: GameCanvasProps) => {
 
   const { toast } = useToast();
 
-  // Initialize audio context
+  // Initialize audio context and load default voice
   useEffect(() => {
     audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
     
-    // Load voice sound if provided
-    if (voiceSound) {
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        const arrayBuffer = e.target?.result as ArrayBuffer;
+    // Load default Sura voice
+    const loadAudio = async () => {
+      try {
+        const response = await fetch(suraVoiceDefault);
+        const arrayBuffer = await response.arrayBuffer();
         if (audioContextRef.current) {
-          try {
-            audioBufferRef.current = await audioContextRef.current.decodeAudioData(arrayBuffer);
-          } catch (error) {
-            console.error("Error decoding audio:", error);
-          }
+          audioBufferRef.current = await audioContextRef.current.decodeAudioData(arrayBuffer);
         }
-      };
-      reader.readAsArrayBuffer(voiceSound);
-    }
+      } catch (error) {
+        console.error("Error loading audio:", error);
+      }
+    };
+    
+    loadAudio();
 
     return () => {
       audioContextRef.current?.close();
     };
-  }, [voiceSound]);
+  }, []);
 
   const playFlapSound = useCallback((isGoingUp: boolean) => {
     if (!audioContextRef.current || !audioBufferRef.current) return;
@@ -69,8 +67,9 @@ const GameCanvas = ({ faceImage, voiceSound, onGameOver }: GameCanvasProps) => {
     const source = audioContextRef.current.createBufferSource();
     source.buffer = audioBufferRef.current;
     
-    // Adjust playback rate based on direction
-    source.playbackRate.value = isGoingUp ? 1.3 : 0.8;
+    // Create light screaming effect with higher pitch and faster playback
+    // Adjust playback rate based on direction for screaming voice effect
+    source.playbackRate.value = isGoingUp ? 1.8 : 1.5;
     
     source.connect(audioContextRef.current.destination);
     source.start(0);
@@ -124,9 +123,9 @@ const GameCanvas = ({ faceImage, voiceSound, onGameOver }: GameCanvasProps) => {
     const gameState = gameStateRef.current;
     let animationFrameId: number;
 
-    // Load face image (use uploaded or default Sura face)
+    // Load default Sura face
     const faceImg = new Image();
-    faceImg.src = faceImage || suraFaceDefault;
+    faceImg.src = suraFaceDefault;
 
     const gameLoop = () => {
       if (gameState.isGameOver) return;
@@ -222,7 +221,7 @@ const GameCanvas = ({ faceImage, voiceSound, onGameOver }: GameCanvasProps) => {
       const rotation = Math.min(Math.max(gameState.playerVelocity * 0.05, -0.5), 0.5);
       ctx.rotate(rotation);
 
-      // Draw face (uploaded or default Sura face)
+      // Draw default Sura face
       if (faceImg.complete) {
         ctx.beginPath();
         ctx.arc(0, 0, PLAYER_SIZE / 2, 0, Math.PI * 2);
@@ -250,7 +249,7 @@ const GameCanvas = ({ faceImage, voiceSound, onGameOver }: GameCanvasProps) => {
     return () => {
       cancelAnimationFrame(animationFrameId);
     };
-  }, [isPlaying, faceImage, score, onGameOver]);
+  }, [isPlaying, score, onGameOver]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-sky px-4">

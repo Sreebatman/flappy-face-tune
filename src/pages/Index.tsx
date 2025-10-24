@@ -7,13 +7,9 @@ type GameState = "start" | "playing" | "gameOver";
 
 const Index = () => {
   const [gameState, setGameState] = useState<GameState>("start");
-  const [faceImage, setFaceImage] = useState<string | null>(null);
-  const [voiceSound, setVoiceSound] = useState<File | null>(null);
   const [finalScore, setFinalScore] = useState(0);
 
-  const handleStart = (face: string | null, voice: File | null) => {
-    setFaceImage(face);
-    setVoiceSound(voice);
+  const handleStart = () => {
     setGameState("playing");
   };
 
@@ -28,19 +24,13 @@ const Index = () => {
 
   const handleBackToStart = () => {
     setGameState("start");
-    setFaceImage(null);
-    setVoiceSound(null);
   };
 
   return (
     <>
       {gameState === "start" && <StartScreen onStart={handleStart} />}
       {gameState === "playing" && (
-        <GameCanvas
-          faceImage={faceImage}
-          voiceSound={voiceSound}
-          onGameOver={handleGameOver}
-        />
+        <GameCanvas onGameOver={handleGameOver} />
       )}
       {gameState === "gameOver" && (
         <GameOverScreen
