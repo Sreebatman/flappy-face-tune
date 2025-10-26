@@ -18,7 +18,8 @@ const FLAP_STRENGTH = -10;
 const PIPE_WIDTH = 80;
 const PIPE_GAP = 240;
 const PIPE_SPEED = 2.5;
-const PLAYER_SIZE = 60;
+const PLAYER_SIZE = 45; // Reduced from 60
+const WEATHER_CHANGE_SCORE = 10; // Score threshold for weather change
 
 const GameCanvas = ({ onGameOver }: GameCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -122,10 +123,22 @@ const GameCanvas = ({ onGameOver }: GameCanvasProps) => {
 
     const gameState = gameStateRef.current;
     let animationFrameId: number;
+    let raindrops: Array<{ x: number; y: number; speed: number; length: number }> = [];
+    let lightningFrame = 0;
 
     // Load default Sura face
     const faceImg = new Image();
     faceImg.src = suraFaceDefault;
+
+    // Initialize raindrops
+    for (let i = 0; i < 100; i++) {
+      raindrops.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        speed: Math.random() * 5 + 5,
+        length: Math.random() * 15 + 10
+      });
+    }
 
     const gameLoop = () => {
       if (gameState.isGameOver) return;
@@ -133,12 +146,108 @@ const GameCanvas = ({ onGameOver }: GameCanvasProps) => {
       // Clear canvas
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+      const isStormy = score >= WEATHER_CHANGE_SCORE;
+
       // Draw sky gradient
       const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-      gradient.addColorStop(0, "#bae6fd");
-      gradient.addColorStop(1, "#7dd3fc");
+      if (isStormy) {
+        gradient.addColorStop(0, "#1e293b");
+        gradient.addColorStop(1, "#475569");
+      } else {
+        gradient.addColorStop(0, "#bae6fd");
+        gradient.addColorStop(1, "#7dd3fc");
+      }
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Draw sun (only in normal weather)
+      if (!isStormy) {
+        ctx.fillStyle = "#fbbf24";
+        ctx.beginPath();
+        ctx.arc(canvas.width - 60, 60, 30, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Sun rays
+        ctx.strokeStyle = "#fbbf24";
+        ctx.lineWidth = 3;
+        for (let i = 0; i < 8; i++) {
+          const angle = (Math.PI * 2 * i) / 8;
+          ctx.beginPath();
+          ctx.moveTo(
+            canvas.width - 60 + Math.cos(angle) * 40,
+            60 + Math.sin(angle) * 40
+          );
+          ctx.lineTo(
+            canvas.width - 60 + Math.cos(angle) * 50,
+            60 + Math.sin(angle) * 50
+          );
+          ctx.stroke();
+        }
+      }
+
+      // Draw clouds
+      const drawCloud = (x: number, y: number, scale: number) => {
+        ctx.fillStyle = isStormy ? "#64748b" : "#ffffff";
+        ctx.beginPath();
+        ctx.arc(x, y, 20 * scale, 0, Math.PI * 2);
+        ctx.arc(x + 25 * scale, y, 25 * scale, 0, Math.PI * 2);
+        ctx.arc(x + 50 * scale, y, 20 * scale, 0, Math.PI * 2);
+        ctx.arc(x + 25 * scale, y - 15 * scale, 20 * scale, 0, Math.PI * 2);
+        ctx.fill();
+      };
+
+      // Animate clouds
+      const cloudOffset = (gameState.frameCount * 0.5) % (canvas.width + 100);
+      drawCloud(cloudOffset - 100, 80, 0.8);
+      drawCloud(cloudOffset + 100, 120, 1);
+      drawCloud(cloudOffset + 300, 90, 0.9);
+
+      // Draw rain and lightning (only in stormy weather)
+      if (isStormy) {
+        // Update and draw raindrops
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.5)";
+        ctx.lineWidth = 2;
+        raindrops.forEach((drop) => {
+          ctx.beginPath();
+          ctx.moveTo(drop.x, drop.y);
+          ctx.lineTo(drop.x, drop.y + drop.length);
+          ctx.stroke();
+
+          drop.y += drop.speed;
+          if (drop.y > canvas.height) {
+            drop.y = -drop.length;
+            drop.x = Math.random() * canvas.width;
+          }
+        });
+
+        // Lightning effect
+        if (Math.random() < 0.01) {
+          lightningFrame = 3;
+        }
+
+        if (lightningFrame > 0) {
+          ctx.strokeStyle = "#fef08a";
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          const startX = Math.random() * canvas.width;
+          let currentX = startX;
+          let currentY = 0;
+          ctx.moveTo(currentX, currentY);
+          
+          while (currentY < canvas.height) {
+            currentY += Math.random() * 50 + 20;
+            currentX += (Math.random() - 0.5) * 40;
+            ctx.lineTo(currentX, currentY);
+          }
+          ctx.stroke();
+          
+          // Flash effect
+          ctx.fillStyle = `rgba(255, 255, 255, ${lightningFrame * 0.1})`;
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          
+          lightningFrame--;
+        }
+      }
 
       if (isPlaying) {
         // Update player physics
@@ -221,17 +330,17 @@ const GameCanvas = ({ onGameOver }: GameCanvasProps) => {
       const rotation = Math.min(Math.max(gameState.playerVelocity * 0.05, -0.5), 0.5);
       ctx.rotate(rotation);
 
-      // Draw face as square without circular clipping
+      // Draw face - properly cropped to show full face
       if (faceImg.complete) {
-        // Manual crop to show just the face portion
         const imgWidth = faceImg.naturalWidth;
         const imgHeight = faceImg.naturalHeight;
         
-        // Adjust these values to crop exactly to the face
-        const cropWidth = imgWidth * 0.5;  // Take 50% of width centered on face
-        const cropHeight = imgHeight * 0.6; // Take 60% of height for face area
-        const cropX = imgWidth * 0.25;  // Start 25% from left
-        const cropY = imgHeight * 0.15; // Start 15% from top
+        // Optimized crop values for full face visibility
+        // Based on typical portrait composition: center 40% width, top 45% height
+        const cropWidth = imgWidth * 0.4;
+        const cropHeight = imgHeight * 0.45;
+        const cropX = imgWidth * 0.3;  // Center horizontally
+        const cropY = imgHeight * 0.2; // Position to include full face from forehead to chin
         
         ctx.drawImage(
           faceImg,
