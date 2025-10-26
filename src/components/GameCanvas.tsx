@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
-import suraFaceDefault from "@/assets/sura-face.jpg";
+import suraFaceDefault from "@/assets/sura-face-cutout.jpg";
 import suraVoiceDefault from "@/assets/sura-voice.opus";
 
 interface GameCanvasProps {
@@ -13,12 +13,12 @@ interface Pipe {
   scored: boolean;
 }
 
-const GRAVITY = 0.4;
-const FLAP_STRENGTH = -10;
+const GRAVITY = 0.3; // Reduced for easier gameplay
+const FLAP_STRENGTH = -8; // Reduced for smoother control
 const PIPE_WIDTH = 80;
-const PIPE_GAP = 240;
-const PIPE_SPEED = 2.5;
-const PLAYER_SIZE = 45; // Reduced from 60
+const PIPE_GAP = 280; // Increased gap for easier passage
+const PIPE_SPEED = 2; // Reduced speed
+const PLAYER_SIZE = 50; // Slightly larger
 const WEATHER_CHANGE_SCORE = 10; // Score threshold for weather change
 
 const GameCanvas = ({ onGameOver }: GameCanvasProps) => {
@@ -330,21 +330,10 @@ const GameCanvas = ({ onGameOver }: GameCanvasProps) => {
       const rotation = Math.min(Math.max(gameState.playerVelocity * 0.05, -0.5), 0.5);
       ctx.rotate(rotation);
 
-      // Draw face - properly cropped to show full face
+      // Draw face - using pre-cutout image with frame
       if (faceImg.complete) {
-        const imgWidth = faceImg.naturalWidth;
-        const imgHeight = faceImg.naturalHeight;
-        
-        // Optimized crop values for full face visibility
-        // Based on typical portrait composition: center 40% width, top 45% height
-        const cropWidth = imgWidth * 0.4;
-        const cropHeight = imgHeight * 0.45;
-        const cropX = imgWidth * 0.3;  // Center horizontally
-        const cropY = imgHeight * 0.2; // Position to include full face from forehead to chin
-        
         ctx.drawImage(
           faceImg,
-          cropX, cropY, cropWidth, cropHeight,
           -PLAYER_SIZE / 2, -PLAYER_SIZE / 2, PLAYER_SIZE, PLAYER_SIZE
         );
       }
