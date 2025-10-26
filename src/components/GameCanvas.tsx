@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import suraFaceDefault from "@/assets/sura-face-cutout.jpg";
-import suraVoiceDefault from "@/assets/sura-voice.opus";
 
 interface GameCanvasProps {
   onGameOver: (score: number) => void;
@@ -34,59 +33,67 @@ const GameCanvas = ({ onGameOver }: GameCanvasProps) => {
   });
 
   const audioContextRef = useRef<AudioContext | null>(null);
-  const audioBufferRef = useRef<AudioBuffer | null>(null);
 
   const { toast } = useToast();
 
-  // Initialize audio context and load default voice
+  // Initialize audio context
   useEffect(() => {
     audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-    
-    // Load default Sura voice
-    const loadAudio = async () => {
-      try {
-        const response = await fetch(suraVoiceDefault);
-        const arrayBuffer = await response.arrayBuffer();
-        if (audioContextRef.current) {
-          audioBufferRef.current = await audioContextRef.current.decodeAudioData(arrayBuffer);
-        }
-      } catch (error) {
-        console.error("Error loading audio:", error);
-      }
-    };
-    
-    loadAudio();
 
     return () => {
       audioContextRef.current?.close();
     };
   }, []);
 
-  const playFlapSound = useCallback((isGoingUp: boolean) => {
-    if (!audioContextRef.current || !audioBufferRef.current) return;
+  const playHappyScream = useCallback(() => {
+    if (!audioContextRef.current) return;
 
-    const source = audioContextRef.current.createBufferSource();
-    source.buffer = audioBufferRef.current;
+    const oscillator = audioContextRef.current.createOscillator();
+    const gainNode = audioContextRef.current.createGain();
     
-    // Create "eehhh" screaming effect with very high pitch
-    // Much higher playback rate for intense screaming sound
-    source.playbackRate.value = isGoingUp ? 2.2 : 1.8;
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContextRef.current.destination);
     
-    source.connect(audioContextRef.current.destination);
-    source.start(0);
+    // Happy scream - ascending pitch
+    oscillator.frequency.setValueAtTime(400, audioContextRef.current.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(800, audioContextRef.current.currentTime + 0.2);
+    
+    gainNode.gain.setValueAtTime(0.3, audioContextRef.current.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContextRef.current.currentTime + 0.2);
+    
+    oscillator.start(audioContextRef.current.currentTime);
+    oscillator.stop(audioContextRef.current.currentTime + 0.2);
+  }, []);
+
+  const playSadScream = useCallback(() => {
+    if (!audioContextRef.current) return;
+
+    const oscillator = audioContextRef.current.createOscillator();
+    const gainNode = audioContextRef.current.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContextRef.current.destination);
+    
+    // Sad scream - descending pitch
+    oscillator.frequency.setValueAtTime(600, audioContextRef.current.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(200, audioContextRef.current.currentTime + 0.5);
+    
+    gainNode.gain.setValueAtTime(0.4, audioContextRef.current.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContextRef.current.currentTime + 0.5);
+    
+    oscillator.start(audioContextRef.current.currentTime);
+    oscillator.stop(audioContextRef.current.currentTime + 0.5);
   }, []);
 
   const flap = useCallback(() => {
     if (gameStateRef.current.isGameOver) return;
     
-    const isGoingUp = gameStateRef.current.playerVelocity > -5;
     gameStateRef.current.playerVelocity = FLAP_STRENGTH;
-    playFlapSound(isGoingUp);
     
     if (!isPlaying) {
       setIsPlaying(true);
     }
-  }, [isPlaying, playFlapSound]);
+  }, [isPlaying]);
 
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
@@ -293,6 +300,7 @@ const GameCanvas = ({ onGameOver }: GameCanvasProps) => {
           if (!pipe.scored && pipe.x + PIPE_WIDTH < canvas.width / 2 - PLAYER_SIZE / 2) {
             pipe.scored = true;
             setScore((prev) => prev + 1);
+            playHappyScream();
           }
 
           // Check collision
@@ -307,6 +315,7 @@ const GameCanvas = ({ onGameOver }: GameCanvasProps) => {
             (playerTop < pipe.topHeight || playerBottom > pipe.topHeight + PIPE_GAP)
           ) {
             gameState.isGameOver = true;
+            playSadScream();
             onGameOver(score);
           }
 
@@ -318,6 +327,7 @@ const GameCanvas = ({ onGameOver }: GameCanvasProps) => {
         // Check ground/ceiling collision
         if (gameState.playerY > canvas.height - PLAYER_SIZE || gameState.playerY < 0) {
           gameState.isGameOver = true;
+          playSadScream();
           onGameOver(score);
         }
       }
@@ -330,7 +340,7 @@ const GameCanvas = ({ onGameOver }: GameCanvasProps) => {
       const rotation = Math.min(Math.max(gameState.playerVelocity * 0.05, -0.5), 0.5);
       ctx.rotate(rotation);
 
-      // Draw face - using pre-cutout image with frame
+      // Draw face - using image with its natural frame
       if (faceImg.complete) {
         ctx.drawImage(
           faceImg,
@@ -338,10 +348,7 @@ const GameCanvas = ({ onGameOver }: GameCanvasProps) => {
         );
       }
 
-      // Add shadow/glow
       ctx.restore();
-      ctx.shadowColor = "rgba(59, 130, 246, 0.5)";
-      ctx.shadowBlur = 10;
 
       animationFrameId = requestAnimationFrame(gameLoop);
     };
@@ -351,7 +358,7 @@ const GameCanvas = ({ onGameOver }: GameCanvasProps) => {
     return () => {
       cancelAnimationFrame(animationFrameId);
     };
-  }, [isPlaying, score, onGameOver]);
+  }, [isPlaying, score, onGameOver, playHappyScream, playSadScream]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-sky px-4">
