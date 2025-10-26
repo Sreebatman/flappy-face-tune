@@ -18,7 +18,7 @@ const PIPE_WIDTH = 80;
 const PIPE_GAP = 280; // Increased gap for easier passage
 const PIPE_SPEED = 2; // Reduced speed
 const PLAYER_SIZE = 50; // Slightly larger
-const WEATHER_CHANGE_SCORE = 10; // Score threshold for weather change
+const SEASON_CHANGE_INTERVAL = 10; // Score interval for season change
 
 const GameCanvas = ({ onGameOver }: GameCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -153,28 +153,40 @@ const GameCanvas = ({ onGameOver }: GameCanvasProps) => {
       // Clear canvas
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      const isStormy = score >= WEATHER_CHANGE_SCORE;
+      // Determine season based on score
+      const season = Math.floor(score / SEASON_CHANGE_INTERVAL) % 4;
+      // 0: Spring (0-9), 1: Autumn (10-19), 2: Winter (20-29), 3: Storm (30-39), then cycles
 
-      // Draw sky gradient
+      // Draw sky gradient based on season
       const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-      if (isStormy) {
-        gradient.addColorStop(0, "#1e293b");
-        gradient.addColorStop(1, "#475569");
-      } else {
+      if (season === 0) {
+        // Spring - bright blue sky
         gradient.addColorStop(0, "#bae6fd");
         gradient.addColorStop(1, "#7dd3fc");
+      } else if (season === 1) {
+        // Autumn - orange/warm sky
+        gradient.addColorStop(0, "#fbbf24");
+        gradient.addColorStop(1, "#f97316");
+      } else if (season === 2) {
+        // Winter - pale/cold sky
+        gradient.addColorStop(0, "#cbd5e1");
+        gradient.addColorStop(1, "#94a3b8");
+      } else {
+        // Storm - dark sky
+        gradient.addColorStop(0, "#1e293b");
+        gradient.addColorStop(1, "#475569");
       }
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Draw sun (only in normal weather)
-      if (!isStormy) {
+      // Draw sun/moon based on season
+      if (season === 0) {
+        // Spring - bright yellow sun
         ctx.fillStyle = "#fbbf24";
         ctx.beginPath();
         ctx.arc(canvas.width - 60, 60, 30, 0, Math.PI * 2);
         ctx.fill();
         
-        // Sun rays
         ctx.strokeStyle = "#fbbf24";
         ctx.lineWidth = 3;
         for (let i = 0; i < 8; i++) {
@@ -190,11 +202,39 @@ const GameCanvas = ({ onGameOver }: GameCanvasProps) => {
           );
           ctx.stroke();
         }
+      } else if (season === 1) {
+        // Autumn - orange sun
+        ctx.fillStyle = "#fb923c";
+        ctx.beginPath();
+        ctx.arc(canvas.width - 60, 60, 35, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (season === 2) {
+        // Winter - pale sun/snowflakes
+        ctx.fillStyle = "#e0e7ff";
+        ctx.beginPath();
+        ctx.arc(canvas.width - 60, 60, 25, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Draw falling snowflakes
+        ctx.fillStyle = "#ffffff";
+        for (let i = 0; i < 30; i++) {
+          const x = (gameState.frameCount * 0.3 + i * 40) % canvas.width;
+          const y = ((gameState.frameCount * 2 + i * 50) % canvas.height);
+          ctx.beginPath();
+          ctx.arc(x, y, 3, 0, Math.PI * 2);
+          ctx.fill();
+        }
       }
 
       // Draw clouds
       const drawCloud = (x: number, y: number, scale: number) => {
-        ctx.fillStyle = isStormy ? "#64748b" : "#ffffff";
+        if (season === 3) {
+          ctx.fillStyle = "#64748b"; // Dark clouds for storm
+        } else if (season === 1) {
+          ctx.fillStyle = "#fef3c7"; // Yellowish clouds for autumn
+        } else {
+          ctx.fillStyle = "#ffffff"; // White clouds
+        }
         ctx.beginPath();
         ctx.arc(x, y, 20 * scale, 0, Math.PI * 2);
         ctx.arc(x + 25 * scale, y, 25 * scale, 0, Math.PI * 2);
@@ -209,8 +249,8 @@ const GameCanvas = ({ onGameOver }: GameCanvasProps) => {
       drawCloud(cloudOffset + 100, 120, 1);
       drawCloud(cloudOffset + 300, 90, 0.9);
 
-      // Draw rain and lightning (only in stormy weather)
-      if (isStormy) {
+      // Draw rain and lightning (only in storm season)
+      if (season === 3) {
         // Update and draw raindrops
         ctx.strokeStyle = "rgba(255, 255, 255, 0.5)";
         ctx.lineWidth = 2;
@@ -332,7 +372,7 @@ const GameCanvas = ({ onGameOver }: GameCanvasProps) => {
         }
       }
 
-      // Draw player (face)
+      // Draw player (face with transparent background)
       ctx.save();
       ctx.translate(canvas.width / 2, gameState.playerY + PLAYER_SIZE / 2);
       
@@ -340,7 +380,7 @@ const GameCanvas = ({ onGameOver }: GameCanvasProps) => {
       const rotation = Math.min(Math.max(gameState.playerVelocity * 0.05, -0.5), 0.5);
       ctx.rotate(rotation);
 
-      // Draw face - using image with its natural frame
+      // Draw face with transparent background preserved
       if (faceImg.complete) {
         ctx.drawImage(
           faceImg,
