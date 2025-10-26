@@ -221,23 +221,21 @@ const GameCanvas = ({ onGameOver }: GameCanvasProps) => {
       const rotation = Math.min(Math.max(gameState.playerVelocity * 0.05, -0.5), 0.5);
       ctx.rotate(rotation);
 
-      // Draw default Sura face - cropped to show only face
+      // Draw face as square without circular clipping
       if (faceImg.complete) {
-        ctx.beginPath();
-        ctx.arc(0, 0, PLAYER_SIZE / 2, 0, Math.PI * 2);
-        ctx.closePath();
-        ctx.clip();
-        
-        // Crop to show exact face centered in round frame
+        // Manual crop to show just the face portion
         const imgWidth = faceImg.naturalWidth;
         const imgHeight = faceImg.naturalHeight;
-        const cropSize = Math.min(imgWidth, imgHeight) * 0.65;
-        const cropX = imgWidth * 0.5 - cropSize / 2;
-        const cropY = imgHeight * 0.3 - cropSize / 2;
+        
+        // Adjust these values to crop exactly to the face
+        const cropWidth = imgWidth * 0.5;  // Take 50% of width centered on face
+        const cropHeight = imgHeight * 0.6; // Take 60% of height for face area
+        const cropX = imgWidth * 0.25;  // Start 25% from left
+        const cropY = imgHeight * 0.15; // Start 15% from top
         
         ctx.drawImage(
           faceImg,
-          cropX, cropY, cropSize, cropSize,
+          cropX, cropY, cropWidth, cropHeight,
           -PLAYER_SIZE / 2, -PLAYER_SIZE / 2, PLAYER_SIZE, PLAYER_SIZE
         );
       }
