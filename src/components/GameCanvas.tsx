@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
-import suraFaceDefault from "@/assets/sura-face-cutout.jpg";
+import suraFaceDefault from "@/assets/sura-face-cutout.png";
 
 interface GameCanvasProps {
   onGameOver: (score: number) => void;
@@ -54,15 +54,15 @@ const GameCanvas = ({ onGameOver }: GameCanvasProps) => {
     oscillator.connect(gainNode);
     gainNode.connect(audioContextRef.current.destination);
     
-    // Happy scream - ascending pitch
-    oscillator.frequency.setValueAtTime(400, audioContextRef.current.currentTime);
-    oscillator.frequency.exponentialRampToValueAtTime(800, audioContextRef.current.currentTime + 0.2);
+    // Girl's happy scream - higher pitched, quick ascending
+    oscillator.frequency.setValueAtTime(600, audioContextRef.current.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(1200, audioContextRef.current.currentTime + 0.15);
     
-    gainNode.gain.setValueAtTime(0.3, audioContextRef.current.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContextRef.current.currentTime + 0.2);
+    gainNode.gain.setValueAtTime(0.35, audioContextRef.current.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContextRef.current.currentTime + 0.15);
     
     oscillator.start(audioContextRef.current.currentTime);
-    oscillator.stop(audioContextRef.current.currentTime + 0.2);
+    oscillator.stop(audioContextRef.current.currentTime + 0.15);
   }, []);
 
   const playSadScream = useCallback(() => {
@@ -74,15 +74,15 @@ const GameCanvas = ({ onGameOver }: GameCanvasProps) => {
     oscillator.connect(gainNode);
     gainNode.connect(audioContextRef.current.destination);
     
-    // Sad scream - descending pitch
-    oscillator.frequency.setValueAtTime(600, audioContextRef.current.currentTime);
-    oscillator.frequency.exponentialRampToValueAtTime(200, audioContextRef.current.currentTime + 0.5);
+    // Girl's sad scream - higher pitched, dramatic descending
+    oscillator.frequency.setValueAtTime(800, audioContextRef.current.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(300, audioContextRef.current.currentTime + 0.4);
     
-    gainNode.gain.setValueAtTime(0.4, audioContextRef.current.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContextRef.current.currentTime + 0.5);
+    gainNode.gain.setValueAtTime(0.45, audioContextRef.current.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContextRef.current.currentTime + 0.4);
     
     oscillator.start(audioContextRef.current.currentTime);
-    oscillator.stop(audioContextRef.current.currentTime + 0.5);
+    oscillator.stop(audioContextRef.current.currentTime + 0.4);
   }, []);
 
   const flap = useCallback(() => {
