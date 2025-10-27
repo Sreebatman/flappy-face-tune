@@ -156,11 +156,25 @@ const GameCanvas = ({ onGameOver }: GameCanvasProps) => {
             d[i + 3] = 0; // make transparent
           }
         }
+
+        // Measure remaining visible pixels; if too few, fall back to original
+        let nonTransparent = 0;
+        for (let i = 0; i < d.length; i += 4) {
+          if (d[i + 3] > 10) nonTransparent++;
+        }
+        const ratio = nonTransparent / (d.length / 4);
+
         ctx2.putImageData(imageData, 0, 0);
         const newImg = new Image();
         newImg.src = canvas2.toDataURL('image/png');
-        processedFaceRef.current = newImg;
-        console.log('Face image processed (background removed)');
+
+        if (ratio < 0.05) {
+          processedFaceRef.current = null; // use original image
+          console.warn('Processed face appears empty; using original image instead');
+        } else {
+          processedFaceRef.current = newImg;
+          console.log('Face image processed (background removed) - usable');
+        }
       } catch (e) {
         console.warn('Face background removal failed, using original', e);
       }
