@@ -410,9 +410,16 @@ const GameCanvas = ({ onGameOver }: GameCanvasProps) => {
       const rotation = Math.min(Math.max(gameState.playerVelocity * 0.05, -0.5), 0.5);
       ctx.rotate(rotation);
 
-      // Draw face with transparent background preserved
+      // Draw face with transparent background preserved and ellipse clip
       const faceToDraw = processedFaceRef.current || (faceImg.complete ? faceImg : null);
       if (faceToDraw) {
+        // Clip to a face-like ellipse to remove any remaining square frame
+        ctx.beginPath();
+        ctx.ellipse(0, 0, PLAYER_SIZE * 0.48, PLAYER_SIZE * 0.62, 0, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.clip();
+
+        ctx.imageSmoothingEnabled = true;
         ctx.drawImage(
           faceToDraw,
           -PLAYER_SIZE / 2, -PLAYER_SIZE / 2, PLAYER_SIZE, PLAYER_SIZE
