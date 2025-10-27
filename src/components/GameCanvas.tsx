@@ -17,7 +17,7 @@ const FLAP_STRENGTH = -8; // Reduced for smoother control
 const PIPE_WIDTH = 80;
 const PIPE_GAP = 280; // Increased gap for easier passage
 const PIPE_SPEED = 2; // Reduced speed
-const PLAYER_SIZE = 50; // Slightly larger
+const PLAYER_SIZE = 80; // Increased for better visibility
 const SEASON_CHANGE_INTERVAL = 10; // Score interval for season change
 
 const GameCanvas = ({ onGameOver }: GameCanvasProps) => {
