@@ -135,6 +135,9 @@ const GameCanvas = ({ onGameOver }: GameCanvasProps) => {
 
     // Load default Sura face
     const faceImg = new Image();
+    faceImg.onload = () => {
+      console.log('Face image loaded successfully');
+    };
     faceImg.src = suraFaceDefault;
 
     // Initialize raindrops
