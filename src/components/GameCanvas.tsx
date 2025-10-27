@@ -33,6 +33,7 @@ const GameCanvas = ({ onGameOver }: GameCanvasProps) => {
   });
 
   const audioContextRef = useRef<AudioContext | null>(null);
+  const processedFaceRef = useRef<HTMLImageElement | null>(null);
 
   const { toast } = useToast();
 
@@ -135,8 +136,34 @@ const GameCanvas = ({ onGameOver }: GameCanvasProps) => {
 
     // Load default Sura face
     const faceImg = new Image();
+    faceImg.crossOrigin = "anonymous";
     faceImg.onload = () => {
-      console.log('Face image loaded successfully');
+      try {
+        const canvas2 = document.createElement('canvas');
+        canvas2.width = faceImg.naturalWidth;
+        canvas2.height = faceImg.naturalHeight;
+        const ctx2 = canvas2.getContext('2d');
+        if (!ctx2) return;
+        ctx2.drawImage(faceImg, 0, 0);
+        const imageData = ctx2.getImageData(0, 0, canvas2.width, canvas2.height);
+        const d = imageData.data;
+        for (let i = 0; i < d.length; i += 4) {
+          const r = d[i], g = d[i + 1], b = d[i + 2];
+          const max = Math.max(r, g, b);
+          const min = Math.min(r, g, b);
+          const isNearWhite = max > 235 && min > 200 && (max - min) < 18;
+          if (isNearWhite) {
+            d[i + 3] = 0; // make transparent
+          }
+        }
+        ctx2.putImageData(imageData, 0, 0);
+        const newImg = new Image();
+        newImg.src = canvas2.toDataURL('image/png');
+        processedFaceRef.current = newImg;
+        console.log('Face image processed (background removed)');
+      } catch (e) {
+        console.warn('Face background removal failed, using original', e);
+      }
     };
     faceImg.src = suraFaceDefault;
 
@@ -384,9 +411,10 @@ const GameCanvas = ({ onGameOver }: GameCanvasProps) => {
       ctx.rotate(rotation);
 
       // Draw face with transparent background preserved
-      if (faceImg.complete) {
+      const faceToDraw = processedFaceRef.current || (faceImg.complete ? faceImg : null);
+      if (faceToDraw) {
         ctx.drawImage(
-          faceImg,
+          faceToDraw,
           -PLAYER_SIZE / 2, -PLAYER_SIZE / 2, PLAYER_SIZE, PLAYER_SIZE
         );
       }
